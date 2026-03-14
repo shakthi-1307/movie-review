@@ -1,0 +1,182 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Movie Review</title>
+
+    <style>
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+        background: linear-gradient(135deg, #1e3c72, #2a5298);
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
+      }
+
+      .container {
+        background: white;
+        padding: 40px;
+        border-radius: 12px;
+        width: 420px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+      }
+
+      h2 {
+        text-align: center;
+        margin-bottom: 25px;
+      }
+
+      input,
+      textarea {
+        width: 100%;
+        padding: 12px;
+        margin-top: 10px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        font-size: 14px;
+      }
+
+      textarea {
+        height: 120px;
+        resize: none;
+      }
+
+      .stars {
+        margin-top: 15px;
+        font-size: 25px;
+        cursor: pointer;
+        text-align: center;
+      }
+
+      .star {
+        color: #ccc;
+      }
+
+      .star.selected {
+        color: gold;
+      }
+
+      button {
+        margin-top: 15px;
+        width: 100%;
+        padding: 12px;
+        border: none;
+        background: #2a5298;
+        color: white;
+        font-size: 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: 0.3s;
+      }
+
+      button:hover {
+        background: #1e3c72;
+      }
+
+      .success {
+        text-align: center;
+        color: green;
+        margin-top: 15px;
+      }
+
+      .review-card {
+        border-bottom: 1px solid #eee;
+        padding: 10px;
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <h2>Movie Review</h2>
+
+      <input id="movie" placeholder="Movie name" />
+
+      <button onclick="loadReviews()">Show Reviews</button>
+
+      <div class="stars">
+        <span class="star" data-value="1">★</span>
+        <span class="star" data-value="2">★</span>
+        <span class="star" data-value="3">★</span>
+        <span class="star" data-value="4">★</span>
+        <span class="star" data-value="5">★</span>
+      </div>
+
+      <textarea id="review" placeholder="Write your review"></textarea>
+
+      <button onclick="submitReview()">Submit Review</button>
+
+      <div class="success" id="message"></div>
+
+      <h3>Reviews</h3>
+      <div id="reviews"></div>
+    </div>
+
+    <script>
+      let rating = 0;
+      let stars = document.querySelectorAll(".star");
+
+      stars.forEach((star) => {
+        star.addEventListener("click", function () {
+          rating = this.dataset.value;
+
+          stars.forEach((s) => s.classList.remove("selected"));
+
+          for (let i = 0; i < rating; i++) {
+            stars[i].classList.add("selected");
+          }
+        });
+      });
+
+      async function submitReview() {
+        let movie = document.getElementById("movie").value;
+        let review = document.getElementById("review").value;
+
+        let response = await fetch("http://127.0.0.1:8000/review", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            movie: movie,
+            rating: Number(rating),
+            review: review,
+          }),
+        });
+
+        let data = await response.json();
+
+        if (data.sentiment === "positive") {
+          document.getElementById("message").innerText =
+            "That's a positive review 😊 Nice!";
+        } else {
+          document.getElementById("message").innerText =
+            "That's a negative review 😢 Sad!";
+        }
+
+        loadReviews();
+      }
+
+      async function loadReviews() {
+        let movie = document.getElementById("movie").value;
+
+        let response = await fetch(`http://127.0.0.1:8000/reviews/${movie}`);
+        let data = await response.json();
+
+        let container = document.getElementById("reviews");
+
+        container.innerHTML = "";
+
+        data.forEach((r) => {
+          container.innerHTML += `
+<div class="review-card">
+<div>⭐ ${r.rating}/5</div>
+<p>${r.review}</p>
+</div>
+`;
+        });
+      }
+    </script>
+  </body>
+</html>
